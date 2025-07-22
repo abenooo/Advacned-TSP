@@ -13,7 +13,12 @@ const ServiceSchema = new mongoose.Schema({
   slug: String,
   description: String,
   imageUrl: String,
-  subServices: [SubServiceSchema],
+  subService: [{
+    title: String,
+    description: String,
+    heading: String,
+    image: String
+  }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser' },
 }, { timestamps: true });
 
