@@ -33,6 +33,12 @@ app.use('/api/admin-users', adminUserRoutes);
 const bookingRoutes = require('./routes/bookingRoutes');
 app.use('/api/bookings', bookingRoutes);
 
+const applicationRoutes = require('./routes/applicationRoutes');
+app.use('/api/applications', applicationRoutes);
+
+const careerJobRoutes = require('./routes/careerJobRoutes');
+app.use('/api/career-jobs', careerJobRoutes);
+
 // Start server
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
