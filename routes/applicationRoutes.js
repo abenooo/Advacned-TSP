@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const auth = require('../middleware/auth');
 const {
   getAllApplications,
   getApplicationById,
@@ -9,13 +9,13 @@ const {
   deleteApplication
 } = require('../controller/applicationController');
 
-// Public or protect as needed
-router.get('/', getAllApplications);
-router.get('/:id', getApplicationById);
-
-// Admin or protect as needed
+// Public
 router.post('/', createApplication);
-router.put('/:id', updateApplication);
-router.delete('/:id', deleteApplication);
+
+// Protected
+router.get('/', auth, getAllApplications);
+router.get('/:id', auth, getApplicationById);
+router.put('/:id', auth, updateApplication);
+router.delete('/:id', auth, deleteApplication);
 
 module.exports = router;
