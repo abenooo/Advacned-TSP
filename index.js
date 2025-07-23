@@ -39,6 +39,24 @@ app.use('/api/applications', applicationRoutes);
 const careerJobRoutes = require('./routes/careerJobRoutes');
 app.use('/api/career-jobs', careerJobRoutes);
 
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+const auth = require('./middleware/auth');
+
+// Public routes
+app.use('/api/services', serviceRoutes); // GET /api/services is public
+app.use('/api/bookings', bookingRoutes); // POST /api/bookings is public
+app.use('/api/career-jobs', careerJobRoutes); // GET is public
+app.use('/api/applications', applicationRoutes); // POST /api/applications is public
+
+// Protect all other routes
+app.use(auth);
+
+// Example: these will require JWT
+app.use('/api/admin-users', adminUserRoutes);
+app.use('/api/blog-posts', blogPostRoutes);
+
 // Start server
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
