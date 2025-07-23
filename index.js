@@ -30,6 +30,9 @@ app.use('/api/blog-posts', blogPostRoutes);
 const adminUserRoutes = require('./routes/adminUserRoutes');
 app.use('/api/admin-users', adminUserRoutes);
 
+const bookingRoutes = require('./routes/bookingRoutes');
+app.use('/api/bookings', bookingRoutes);
+
 // Start server
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
