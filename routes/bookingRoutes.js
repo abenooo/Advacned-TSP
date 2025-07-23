@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const auth = require('../middleware/auth');
 const {
   getAllBookings,
   getBookingById,
@@ -9,13 +9,13 @@ const {
   deleteBooking
 } = require('../controller/bookingController');
 
-// Public or protect as needed
-router.get('/', getAllBookings);
-router.get('/:id', getBookingById);
-
-// Admin or protect as needed
+// Public
 router.post('/', createBooking);
-router.put('/:id', updateBooking);
-router.delete('/:id', deleteBooking);
+
+// Protected
+router.get('/', auth, getAllBookings);
+router.get('/:id', auth, getBookingById);
+router.put('/:id', auth, updateBooking);
+router.delete('/:id', auth, deleteBooking);
 
 module.exports = router;
