@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const auth = require('../middleware/auth');
 const {
   getAllCareerJobs,
   getCareerJobById,
@@ -9,13 +9,13 @@ const {
   deleteCareerJob
 } = require('../controller/careerJobController');
 
-// Public or protect as needed
+// Public
 router.get('/', getAllCareerJobs);
 router.get('/:id', getCareerJobById);
 
-// Admin or protect as needed
-router.post('/', createCareerJob);
-router.put('/:id', updateCareerJob);
-router.delete('/:id', deleteCareerJob);
+// Protected
+router.post('/', auth, createCareerJob);
+router.put('/:id', auth, updateCareerJob);
+router.delete('/:id', auth, deleteCareerJob);
 
 module.exports = router;
