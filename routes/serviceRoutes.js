@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-
 const {
   getAllServices,
   getServiceById,
@@ -17,12 +16,11 @@ const {
 router.get('/', getAllServices);
 router.get('/:id', getServiceById);
 
-// Protected (require JWT)
+// Protected
 router.post('/', auth, createService);
 router.put('/:id', auth, updateService);
 router.delete('/:id', auth, deleteService);
 
-// Manage subServices (protected)
 router.post('/:id/subservice', auth, addSubService);
 router.put('/:id/subservice/:subSlug', auth, updateSubService);
 router.delete('/:id/subservice/:subSlug', auth, deleteSubService);
