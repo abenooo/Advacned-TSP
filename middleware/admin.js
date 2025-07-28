@@ -4,6 +4,7 @@ module.exports = async function (req, res, next) {
   try {
     console.log('\n=== Admin Middleware Triggered ===');
     console.log('Request URL:', req.originalUrl);
+    console.log('Authorization Header:', req.headers.authorization || 'No Authorization header');
     console.log('User from auth middleware:', JSON.stringify(req.user, null, 2));
     
     // Get the user from the request object (set by auth middleware)
@@ -17,29 +18,44 @@ module.exports = async function (req, res, next) {
       });
     }
 
-    // Log the user ID we're trying to find
-    console.log('🔍 Looking for user with ID:', user.id || user._id, 'or email:', user.email);
+    // Log the user ID we're trying to find - handle both id and _id
+    const userId = user.id || user._id;
+    console.log('🔍 Looking for user with ID:', userId, 'or email:', user.email);
     
-    // Try to find the user by ID or email
-    const adminUser = await AdminUser.findOne({
+    // Build the query to find the user
+    const query = {
       $or: [
-        { _id: user.id || user._id },
+        { _id: userId },
         { email: user.email }
       ]
-    }); // Remove lean() to use instance methods
+    };
+    
+    console.log('🔍 Database query:', JSON.stringify(query, null, 2));
+    
+    // Try to find the user by ID or email
+    const adminUser = await AdminUser.findOne(query);
     
     if (!adminUser) {
-      console.error('❌ User not found in database');
+      console.error('❌ User not found in database with query:', JSON.stringify(query, null, 2));
       return res.status(403).json({ 
         success: false,
-        message: 'User account not found.'
+        message: 'User account not found.',
+        debug: {
+          query,
+          userId: userId,
+          userEmail: user.email
+        }
       });
     }
     
     // Log the user's role for debugging
-    console.log('👤 User role:', adminUser.role);
-    console.log('Is admin?', adminUser.isAdmin());
-    console.log('Is super admin?', adminUser.isSuperAdmin());
+    console.log('👤 Found user in database:', {
+      _id: adminUser._id,
+      email: adminUser.email,
+      role: adminUser.role,
+      isAdmin: adminUser.isAdmin(),
+      isSuperAdmin: adminUser.isSuperAdmin()
+    });
     
     // Check if user has admin privileges using the model method
     if (!adminUser.isAdmin()) {
@@ -48,7 +64,8 @@ module.exports = async function (req, res, next) {
         success: false,
         message: 'Access denied. Admin privileges required.',
         debug: {
-          userId: user.id || user._id,
+          userId: adminUser._id,
+          userEmail: adminUser.email,
           userRole: adminUser.role,
           requiredRoles: ['admin', 'super_admin']
         }
@@ -66,7 +83,11 @@ module.exports = async function (req, res, next) {
       success: false, 
       message: 'Server error during authorization.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      debug: process.env.NODE_ENV === 'development' ? {
+        user: req.user,
+        headers: req.headers
+      } : undefined
     });
   }
 };
