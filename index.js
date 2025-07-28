@@ -26,44 +26,37 @@ app.get('/', (req, res) => {
 });
 
 // API routes
-const serviceRoutes = require('./routes/serviceRoutes');
-app.use('/api/services', serviceRoutes);
+const auth = require('./middleware/auth');
 
-const mainRoutes = require('./routes'); // your /api
-app.use('/api', mainRoutes);
+// Public routes (no authentication required)
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+const serviceRoutes = require('./routes/serviceRoutes');
+app.use('/api/services', serviceRoutes); // Public GET routes
+
+const bookingRoutes = require('./routes/bookingRoutes');
+app.use('/api/bookings', bookingRoutes); // Public POST routes
+
+const careerJobRoutes = require('./routes/careerJobRoutes');
+app.use('/api/career-jobs', careerJobRoutes); // Public GET routes
+
+const applicationRoutes = require('./routes/applicationRoutes');
+app.use('/api/applications', applicationRoutes); // Public POST routes
+
+// Apply auth middleware to all following routes
+app.use(auth);
+
+// Protected routes (require authentication)
+const adminUserRoutes = require('./routes/adminUserRoutes');
+app.use('/api/admin-users', adminUserRoutes);
 
 const blogPostRoutes = require('./routes/blogPostRoutes');
 app.use('/api/blog-posts', blogPostRoutes);
 
-const adminUserRoutes = require('./routes/adminUserRoutes');
-app.use('/api/admin-users', adminUserRoutes);
-
-const bookingRoutes = require('./routes/bookingRoutes');
-app.use('/api/bookings', bookingRoutes);
-
-const applicationRoutes = require('./routes/applicationRoutes');
-app.use('/api/applications', applicationRoutes);
-
-const careerJobRoutes = require('./routes/careerJobRoutes');
-app.use('/api/career-jobs', careerJobRoutes);
-
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
-const auth = require('./middleware/auth');
-
-// Public routes
-app.use('/api/services', serviceRoutes); // GET /api/services is public
-app.use('/api/bookings', bookingRoutes); // POST /api/bookings is public
-app.use('/api/career-jobs', careerJobRoutes); // GET is public
-app.use('/api/applications', applicationRoutes); // POST /api/applications is public
-
-// Protect all other routes
-app.use(auth);
-
-// Example: these will require JWT
-app.use('/api/admin-users', adminUserRoutes);
-app.use('/api/blog-posts', blogPostRoutes);
+// Other protected routes can be added here
+const mainRoutes = require('./routes');
+app.use('/api', mainRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5050;
