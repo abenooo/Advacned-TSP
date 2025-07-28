@@ -91,45 +91,92 @@ exports.createAdminUser = async (req, res) => {
 // Update admin user
 exports.updateAdminUser = async (req, res) => {
   try {
-    const { password, ...updateData } = req.body;
+    const { id } = req.params;
+    const { password, email, role, ...updateData } = req.body;
     
+    // Check if user exists
+    const existingUser = await AdminUser.findById(id);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Prevent updating email to one that's already in use
+    if (email && email !== existingUser.email) {
+      const emailExists = await AdminUser.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already in use',
+          code: 'EMAIL_IN_USE'
+        });
+      }
+      updateData.email = email;
+    }
+
+    // Only allow super_admins to change roles
+    if (role && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only super admins can change user roles',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+    if (role) updateData.role = role;
+
     // Hash new password if provided
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateData.passwordHash = await bcrypt.hash(password, salt);
+      updateData.passwordChangedAt = Date.now();
     }
 
-    const user = await AdminUser.findByIdAndUpdate(
-      req.params.id,
+    // Prevent updating certain fields
+    delete updateData._id;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
+
+    const updatedUser = await AdminUser.findByIdAndUpdate(
+      id,
       updateData,
       { new: true, runValidators: true }
     ).select('-passwordHash');
     
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-    
     res.json({
       success: true,
-      data: user
+      message: 'User updated successfully',
+      data: updatedUser
     });
   } catch (error) {
     console.error('Error updating admin user:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages,
+        code: 'VALIDATION_ERROR'
+      });
+    }
     
     // Handle duplicate key error (unique email)
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Email already in use'
+        message: 'Email already in use',
+        code: 'DUPLICATE_EMAIL'
       });
     }
     
     res.status(500).json({
       success: false,
       message: 'Error updating admin user',
+      code: 'SERVER_ERROR',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -138,24 +185,56 @@ exports.updateAdminUser = async (req, res) => {
 // Delete admin user
 exports.deleteAdminUser = async (req, res) => {
   try {
-    const user = await AdminUser.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
     
-    if (!user) {
-      return res.status(404).json({
+    // Prevent deleting self
+    if (id === req.user.id || id === req.user._id) {
+      return res.status(400).json({
         success: false,
-        message: 'User not found'
+        message: 'You cannot delete your own account',
+        code: 'SELF_DELETE_NOT_ALLOWED'
       });
     }
     
+    // Check if user exists
+    const user = await AdminUser.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Only allow super_admins to delete other admins
+    if (user.role === 'admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only super admins can delete admin users',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+    
+    // Perform the deletion
+    await AdminUser.findByIdAndDelete(id);
+    
     res.json({
       success: true,
-      message: 'User deleted successfully'
+      message: 'User deleted successfully',
+      data: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        deleted: true
+      }
     });
   } catch (error) {
     console.error('Error deleting admin user:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error deleting admin user',
+      code: 'SERVER_ERROR',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
