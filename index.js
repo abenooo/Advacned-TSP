@@ -44,15 +44,16 @@ app.use('/api/career-jobs', careerJobRoutes); // Public GET routes
 const applicationRoutes = require('./routes/applicationRoutes');
 app.use('/api/applications', applicationRoutes); // Public POST routes
 
+// Blog post routes (public GET, protected POST/PUT/DELETE)
+const blogPostRoutes = require('./routes/blogPostRoutes');
+app.use('/api/blog-posts', blogPostRoutes);
+
 // Apply auth middleware to all following routes
 app.use(auth);
 
 // Protected routes (require authentication)
 const adminUserRoutes = require('./routes/adminUserRoutes');
 app.use('/api/admin-users', adminUserRoutes);
-
-const blogPostRoutes = require('./routes/blogPostRoutes');
-app.use('/api/blog-posts', blogPostRoutes);
 
 // Other protected routes can be added here
 const mainRoutes = require('./routes');
