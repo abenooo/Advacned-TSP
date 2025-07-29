@@ -48,16 +48,13 @@ app.use('/api/applications', applicationRoutes); // Public POST routes
 const blogPostRoutes = require('./routes/blogPostRoutes');
 app.use('/api/blog-posts', blogPostRoutes);
 
-// Apply auth middleware to all following routes
-app.use(auth);
-
 // Protected routes (require authentication)
 const adminUserRoutes = require('./routes/adminUserRoutes');
-app.use('/api/admin-users', adminUserRoutes);
+app.use('/api/admin-users', auth, adminUserRoutes);
 
 // Other protected routes can be added here
 const mainRoutes = require('./routes');
-app.use('/api', mainRoutes);
+app.use('/api', auth, mainRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5050;
