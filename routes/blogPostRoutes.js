@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 
 const {
   getAllBlogPosts,
@@ -13,9 +14,9 @@ const {
 router.get('/', getAllBlogPosts);
 router.get('/:id', getBlogPostById);
 
-// Admin routes (you can add authentication middleware if needed)
-router.post('/', createBlogPost);
-router.put('/:id', updateBlogPost);
-router.delete('/:id', deleteBlogPost);
+// Protected routes (require authentication)
+router.post('/', protect, createBlogPost);
+router.put('/:id', protect, updateBlogPost);
+router.delete('/:id', protect, deleteBlogPost);
 
 module.exports = router;
