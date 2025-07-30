@@ -1,46 +1,76 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose")
 
-const OrganizationNeedSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true }
-});
-
-const BusinessValueSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true }
-});
-
-const CTASchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true }
-});
-
-const SubServiceSchema = new mongoose.Schema({
-  subServiceName: { type: String, required: true },
-  slug: { type: String, required: true },
-  moto: { type: String, required: true },
-  definition: { type: String, required: true },
-  commitment: { type: String, required: true },
+const subServiceSchema = new mongoose.Schema({
+  subServiceName: {
+    type: String,
+    required: true,
+  },
+  slug: {
+    type: String,
+    required: true,
+  },
+  moto: String,
+  definition: String,
+  commitment: String,
   organizationNeed: {
-    organizationalDefinition: { type: String, required: true },
-    needs: [OrganizationNeedSchema]
+    organizationalDefinition: String,
+    needs: [
+      {
+        title: String,
+        description: String,
+      },
+    ],
   },
   businessValue: {
-    businessValueDefinition: { type: String, required: true },
-    values: [BusinessValueSchema]
+    businessValueDefinition: String,
+    values: [
+      {
+        title: String,
+        description: String,
+      },
+    ],
   },
-  cta: CTASchema
-});
+  cta: {
+    title: String,
+    description: String,
+  },
+})
 
-const ServiceSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  slug: { type: String, required: true, unique: true },
-  description: { type: String, required: true },
-  moto: { type: String, required: true },
-  imageUrl: { type: String, required: true },
-  icon: { type: String, required: true },
-  subServices: [SubServiceSchema],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser' },
-}, { timestamps: true });
+const serviceSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    moto: String,
+    imageUrl: String,
+    icon: String,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdminUser",
+      default: null,
+    },
+    subServices: [subServiceSchema],
+  },
+  {
+    timestamps: true,
+  },
+)
 
-module.exports = mongoose.model('Service', ServiceSchema);
+// Create indexes for better performance
+serviceSchema.index({ slug: 1 })
+serviceSchema.index({ name: 1 })
+
+const Service = mongoose.model("Service", serviceSchema)
+
+module.exports = Service
