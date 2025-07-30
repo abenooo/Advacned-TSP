@@ -5,7 +5,7 @@ const Service = require('../models/Service');
 exports.getAllServices = async (req, res) => {
   try {
     console.log('GET /api/services called');
-    const services = await Service.find().populate('createdBy', 'username email');
+    const services = await Service.find().populate('createdBy', 'name email role');
     res.json({
       success: true,
       data: services,
@@ -23,20 +23,74 @@ exports.getAllServices = async (req, res) => {
 // Get one service by ID or slug
 exports.getServiceById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const isObjectId = mongoose.Types.ObjectId.isValid(id);
-    const query = isObjectId ? { _id: id } : { slug: id };
-    const service = await Service.findOne(query).populate('createdBy', 'username email');
-    if (!service) {
-      return res.status(404).json({
+    const { slug } = req.params;
+    
+    if (!slug) {
+      return res.status(400).json({
         success: false,
-        message: 'Service not found'
+        message: 'No slug provided'
       });
     }
-    res.json({
-      success: true,
-      data: service
+    
+    console.log(`[DEBUG] Looking up service with slug: ${slug}`);
+    
+    // Simple query to find by slug first
+    let service = await Service.findOne({ slug })
+      .lean()
+      .populate('createdBy', 'name email role');
+    
+    if (service) {
+      console.log(`[DEBUG] Found service by slug: ${service.name}`);
+      return res.json({
+        success: true,
+        data: service
+      });
+    }
+    
+    // If not found by slug, try by ID if it's a valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(slug)) {
+      console.log(`[DEBUG] No service found by slug, trying by _id: ${slug}`);
+      service = await Service.findById(slug)
+        .lean()
+        .populate('createdBy', 'name email role');
+        
+      if (service) {
+        console.log(`[DEBUG] Found service by _id: ${service.name}`);
+        return res.json({
+          success: true,
+          data: service
+        });
+      }
+    }
+    
+    // If still not found, log available services for debugging
+    console.log('[DEBUG] Service not found, listing all available services:');
+    const allServices = await Service.find({}, 'name slug').lean();
+    console.log(JSON.stringify(allServices, null, 2));
+    
+    // Try to find similar slugs (case-insensitive)
+    const similarServices = allServices.filter(s => 
+      s.slug && s.slug.toLowerCase().includes(slug.toLowerCase())
+    );
+    
+    return res.status(404).json({
+      success: false,
+      message: 'Service not found',
+      debug: {
+        searchedFor: slug,
+        availableServices: allServices.map(s => ({ 
+          name: s.name, 
+          slug: s.slug,
+          id: s._id
+        })),
+        similarServices: similarServices.map(s => ({
+          name: s.name,
+          slug: s.slug,
+          id: s._id
+        }))
+      }
     });
+    
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -50,7 +104,7 @@ exports.getServiceById = async (req, res) => {
 exports.getServiceWithSubService = async (req, res) => {
   try {
     const { slug, subSlug } = req.params;
-    const service = await Service.findOne({ slug }).populate('createdBy', 'username email');
+    const service = await Service.findOne({ slug }).populate('createdBy', 'name email role');
     if (!service) {
       return res.status(404).json({
         success: false,
@@ -103,7 +157,7 @@ exports.createService = async (req, res) => {
     };
     const service = new Service(serviceData);
     await service.save();
-    const populatedService = await Service.findById(service._id).populate('createdBy', 'username email');
+    const populatedService = await Service.findById(service._id).populate('createdBy', 'name email role');
     res.status(201).json({
       success: true,
       data: populatedService,
@@ -195,7 +249,7 @@ exports.addSubService = async (req, res) => {
     }
     service.subServices.push(req.body);
     await service.save();
-    const populatedService = await Service.findById(service._id).populate('createdBy', 'username email');
+    const populatedService = await Service.findById(service._id).populate('createdBy', 'name email role');
     res.status(201).json({
       success: true,
       data: populatedService,
@@ -229,7 +283,7 @@ exports.updateSubService = async (req, res) => {
     }
     Object.assign(subService, req.body);
     await service.save();
-    const populatedService = await Service.findById(service._id).populate('createdBy', 'username email');
+    const populatedService = await Service.findById(service._id).populate('createdBy', 'name email role');
     res.json({
       success: true,
       data: populatedService,
@@ -263,7 +317,7 @@ exports.deleteSubService = async (req, res) => {
       });
     }
     await service.save();
-    const populatedService = await Service.findById(service._id).populate('createdBy', 'username email');
+    const populatedService = await Service.findById(service._id).populate('createdBy', 'name email role');
     res.json({
       success: true,
       data: populatedService,
