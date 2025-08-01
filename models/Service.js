@@ -42,11 +42,13 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      index: true
     },
     slug: {
       type: String,
       required: true,
       unique: true,
+      index: true
     },
     description: {
       type: String,
@@ -67,9 +69,7 @@ const serviceSchema = new mongoose.Schema(
   },
 )
 
-// Create indexes for better performance
-serviceSchema.index({ slug: 1 })
-serviceSchema.index({ name: 1 })
+// Removed duplicate index definitions since they're now defined in the schema
 
 const Service = mongoose.model("Service", serviceSchema)
 
