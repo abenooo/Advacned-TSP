@@ -21,12 +21,12 @@ const {
 router.get('/', getAllServices);
 
 /**
- * @route   GET /api/services/:slug/:subSlug
+ * @route   GET /api/services/:serviceSlug/:subServiceSlug
  * @desc    Get a specific sub-service within a service
  * @access  Public
  * @note    This route must come before the single service route
  */
-router.get('/:slug/:subSlug', getServiceWithSubService);
+router.get('/:serviceSlug/:subServiceSlug', getServiceWithSubService);
 
 /**
  * @route   GET /api/services/:slug
