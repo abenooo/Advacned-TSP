@@ -103,38 +103,47 @@ exports.getServiceById = async (req, res) => {
 // Get service by slug with sub-service
 exports.getServiceWithSubService = async (req, res) => {
   try {
-    const { slug, subSlug } = req.params;
-    const service = await Service.findOne({ slug }).populate('createdBy', 'name email role');
+    const { serviceSlug, subServiceSlug } = req.params;
+    const service = await Service.findOne({ slug: serviceSlug }).populate('createdBy', 'name email role');
+    
     if (!service) {
       return res.status(404).json({
         success: false,
         message: 'Service not found'
       });
     }
-    if (subSlug) {
-      const subService = service.subServices.find(sub => sub.slug === subSlug);
-      if (!subService) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sub-service not found'
-        });
-      }
-      return res.json({
-        success: true,
-        data: {
-          service: {
-            _id: service._id,
-            name: service.name,
-            slug: service.slug,
-            description: service.description,
-            moto: service.moto,
-            imageUrl: service.imageUrl,
-            icon: service.icon
-          },
-          subService: subService
+    
+    const subService = service.subServices.find(sub => sub.slug === subServiceSlug);
+    if (!subService) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sub-service not found',
+        debug: {
+          serviceSlug: serviceSlug,
+          subServiceSlug: subServiceSlug,
+          availableSubServices: service.subServices.map(s => ({
+            name: s.subServiceName,
+            slug: s.slug
+          }))
         }
       });
     }
+    
+    return res.json({
+      success: true,
+      data: {
+        service: {
+          _id: service._id,
+          name: service.name,
+          slug: service.slug,
+          description: service.description,
+          moto: service.moto,
+          imageUrl: service.imageUrl,
+          icon: service.icon
+        },
+        subService: subService
+      }
+    });
     res.json({
       success: true,
       data: service
