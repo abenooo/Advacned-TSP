@@ -106,7 +106,7 @@ exports.getServiceById = async (req, res) => {
 // Get service by slug with sub-service - FIXED VERSION
 exports.getServiceWithSubService = async (req, res) => {
   try {
-    const { slug: serviceSlug, subSlug: subServiceSlug } = req.params;
+    const { serviceSlug, subServiceSlug } = req.params;
     
     console.log(`[DEBUG] Looking for service: ${serviceSlug}, subService: ${subServiceSlug}`);
     
