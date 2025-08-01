@@ -6,12 +6,14 @@ exports.getAllServices = async (req, res) => {
   try {
     console.log('GET /api/services called');
     const services = await Service.find().populate('createdBy', 'name email role');
+    console.log(`Found ${services.length} services`);
     res.json({
       success: true,
       data: services,
       count: services.length
     });
   } catch (error) {
+    console.error('Error in getAllServices:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching services',
@@ -92,6 +94,7 @@ exports.getServiceById = async (req, res) => {
     });
     
   } catch (error) {
+    console.error('Error in getServiceById:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching service',
@@ -100,21 +103,29 @@ exports.getServiceById = async (req, res) => {
   }
 };
 
-// Get service by slug with sub-service
+// Get service by slug with sub-service - FIXED VERSION
 exports.getServiceWithSubService = async (req, res) => {
   try {
-    const { serviceSlug, subServiceSlug } = req.params;
+    const { slug: serviceSlug, subSlug: subServiceSlug } = req.params;
+    
+    console.log(`[DEBUG] Looking for service: ${serviceSlug}, subService: ${subServiceSlug}`);
+    
     const service = await Service.findOne({ slug: serviceSlug }).populate('createdBy', 'name email role');
     
     if (!service) {
+      console.log(`[DEBUG] Service not found: ${serviceSlug}`);
       return res.status(404).json({
         success: false,
         message: 'Service not found'
       });
     }
     
+    console.log(`[DEBUG] Found service: ${service.name}, looking for subService: ${subServiceSlug}`);
+    console.log(`[DEBUG] Available subServices:`, service.subServices.map(s => s.slug));
+    
     const subService = service.subServices.find(sub => sub.slug === subServiceSlug);
     if (!subService) {
+      console.log(`[DEBUG] Sub-service not found: ${subServiceSlug}`);
       return res.status(404).json({
         success: false,
         message: 'Sub-service not found',
@@ -129,6 +140,9 @@ exports.getServiceWithSubService = async (req, res) => {
       });
     }
     
+    console.log(`[DEBUG] Found sub-service: ${subService.subServiceName}`);
+    
+    // Return the response - REMOVED THE DUPLICATE res.json() call
     return res.json({
       success: true,
       data: {
@@ -144,11 +158,9 @@ exports.getServiceWithSubService = async (req, res) => {
         subService: subService
       }
     });
-    res.json({
-      success: true,
-      data: service
-    });
+    
   } catch (error) {
+    console.error('Error in getServiceWithSubService:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching service',
@@ -331,7 +343,7 @@ exports.deleteSubService = async (req, res) => {
       success: true,
       data: populatedService,
       message: 'Sub-service deleted successfully'
-    });
+    });  
   } catch (error) {
     res.status(500).json({
       success: false,
