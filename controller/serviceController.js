@@ -4,20 +4,17 @@ const Service = require('../models/Service');
 // Get all services
 exports.getAllServices = async (req, res) => {
   try {
-    console.log('GET /api/services called');
     const services = await Service.find().populate('createdBy', 'name email role');
-    console.log(`Found ${services.length} services`);
     res.json({
       success: true,
       data: services,
       count: services.length
     });
   } catch (error) {
-    console.error('Error in getAllServices:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching services',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -34,116 +31,64 @@ exports.getServiceById = async (req, res) => {
       });
     }
     
-    console.log(`[DEBUG] Looking up service with slug: ${slug}`);
-    
-    // Simple query to find by slug first
-    let service = await Service.findOne({ slug })
+    const service = await Service.findOne({ slug })
       .lean()
       .populate('createdBy', 'name email role');
     
-    if (service) {
-      console.log(`[DEBUG] Found service by slug: ${service.name}`);
-      return res.json({
-        success: true,
-        data: service
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service not found'
       });
     }
-    
-    // If not found by slug, try by ID if it's a valid ObjectId
-    if (mongoose.Types.ObjectId.isValid(slug)) {
-      console.log(`[DEBUG] No service found by slug, trying by _id: ${slug}`);
-      service = await Service.findById(slug)
-        .lean()
-        .populate('createdBy', 'name email role');
-        
-      if (service) {
-        console.log(`[DEBUG] Found service by _id: ${service.name}`);
-        return res.json({
-          success: true,
-          data: service
-        });
-      }
-    }
-    
-    // If still not found, log available services for debugging
-    console.log('[DEBUG] Service not found, listing all available services:');
-    const allServices = await Service.find({}, 'name slug').lean();
-    console.log(JSON.stringify(allServices, null, 2));
-    
-    // Try to find similar slugs (case-insensitive)
-    const similarServices = allServices.filter(s => 
-      s.slug && s.slug.toLowerCase().includes(slug.toLowerCase())
-    );
-    
-    return res.status(404).json({
-      success: false,
-      message: 'Service not found',
-      debug: {
-        searchedFor: slug,
-        availableServices: allServices.map(s => ({ 
-          name: s.name, 
-          slug: s.slug,
-          id: s._id
-        })),
-        similarServices: similarServices.map(s => ({
-          name: s.name,
-          slug: s.slug,
-          id: s._id
-        }))
-      }
+
+    res.json({
+      success: true,
+      data: service
     });
-    
   } catch (error) {
-    console.error('Error in getServiceById:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
 
-// Get service by slug with sub-service - FIXED VERSION
+// Get service by slug with sub-service
 exports.getServiceWithSubService = async (req, res) => {
   try {
     const { serviceSlug, subServiceSlug } = req.params;
     
-    console.log(`[DEBUG] Looking for service: ${serviceSlug}, subService: ${subServiceSlug}`);
-    
-    const service = await Service.findOne({ slug: serviceSlug }).populate('createdBy', 'name email role');
+    const service = await Service.findOne({ slug: serviceSlug })
+      .populate('createdBy', 'name email role');
     
     if (!service) {
-      console.log(`[DEBUG] Service not found: ${serviceSlug}`);
       return res.status(404).json({
         success: false,
         message: 'Service not found'
       });
     }
     
-    console.log(`[DEBUG] Found service: ${service.name}, looking for subService: ${subServiceSlug}`);
-    console.log(`[DEBUG] Available subServices:`, service.subServices.map(s => s.slug));
-    
     const subService = service.subServices.find(sub => sub.slug === subServiceSlug);
     if (!subService) {
-      console.log(`[DEBUG] Sub-service not found: ${subServiceSlug}`);
       return res.status(404).json({
         success: false,
         message: 'Sub-service not found',
-        debug: {
-          serviceSlug: serviceSlug,
-          subServiceSlug: subServiceSlug,
-          availableSubServices: service.subServices.map(s => ({
-            name: s.subServiceName,
-            slug: s.slug
-          }))
-        }
+        ...(process.env.NODE_ENV === 'development' && {
+          debug: {
+            serviceSlug,
+            subServiceSlug,
+            availableSubServices: service.subServices.map(s => ({
+              name: s.subServiceName,
+              slug: s.slug
+            }))
+          }
+        })
       });
     }
-    
-    console.log(`[DEBUG] Found sub-service: ${subService.subServiceName}`);
-    
-    // Return the response - REMOVED THE DUPLICATE res.json() call
-    return res.json({
+
+    res.json({
       success: true,
       data: {
         service: {
@@ -155,16 +100,14 @@ exports.getServiceWithSubService = async (req, res) => {
           imageUrl: service.imageUrl,
           icon: service.icon
         },
-        subService: subService
+        subService
       }
     });
-    
   } catch (error) {
-    console.error('Error in getServiceWithSubService:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -194,7 +137,7 @@ exports.createService = async (req, res) => {
     res.status(400).json({
       success: false,
       message: 'Error creating service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -222,7 +165,7 @@ exports.updateService = async (req, res) => {
     res.status(400).json({
       success: false,
       message: 'Error updating service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -245,7 +188,7 @@ exports.deleteService = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -280,7 +223,7 @@ exports.addSubService = async (req, res) => {
     res.status(400).json({
       success: false,
       message: 'Error adding sub-service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -314,7 +257,7 @@ exports.updateSubService = async (req, res) => {
     res.status(400).json({
       success: false,
       message: 'Error updating sub-service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -348,7 +291,7 @@ exports.deleteSubService = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting sub-service',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
