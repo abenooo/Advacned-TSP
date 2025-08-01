@@ -25,10 +25,16 @@ app.use(cors({
 // Add explicit OPTIONS handling for preflight requests
 app.options('*', cors());
 
+// Add debugging middleware BEFORE routes
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error(err));
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Test home route with debugging
 app.get('/', (req, res) => {
@@ -42,13 +48,6 @@ app.get('/', (req, res) => {
       specific_service: '/api/services/cloud-computing-migration/cloud-migration'
     }
   });
-});
-
-// Add debugging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
-  next();
 });
 
 // Add a specific test route for debugging
@@ -66,31 +65,45 @@ const auth = require('./middleware/auth');
 
 // Public routes (no authentication required)
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
 const serviceRoutes = require('./routes/serviceRoutes');
-app.use('/api/services', serviceRoutes); // Public GET routes
-
 const bookingRoutes = require('./routes/bookingRoutes');
-app.use('/api/bookings', bookingRoutes); // Public POST routes
-
 const careerJobRoutes = require('./routes/careerJobRoutes');
-app.use('/api/career-jobs', careerJobRoutes); // Public GET routes
-
 const applicationRoutes = require('./routes/applicationRoutes');
-app.use('/api/applications', applicationRoutes); // Public POST routes
-
-// Blog post routes (public GET, protected POST/PUT/DELETE)
 const blogPostRoutes = require('./routes/blogPostRoutes');
+
+// Apply routes
+app.use('/api/auth', authRoutes);
+app.use('/api/services', serviceRoutes); // Public GET routes
+app.use('/api/bookings', bookingRoutes); // Public POST routes
+app.use('/api/career-jobs', careerJobRoutes); // Public GET routes
+app.use('/api/applications', applicationRoutes); // Public POST routes
 app.use('/api/blog-posts', blogPostRoutes);
 
 // Protected routes (require authentication)
 const adminUserRoutes = require('./routes/adminUserRoutes');
 app.use('/api/admin-users', auth, adminUserRoutes);
 
-// Other protected routes can be added here
-const mainRoutes = require('./routes');
-app.use('/api', auth, mainRoutes);
+// Comment out or remove this line if it's causing conflicts
+// const mainRoutes = require('./routes');
+// app.use('/api', auth, mainRoutes);
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 5050;
