@@ -11,6 +11,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000', 
     'https://advanced-tsp.onrender.com',
+    'https://advacned-tsp.onrender.com',
     'https://advanced-stp-dashboard.vercel.app'
   ]
 }));
