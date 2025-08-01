@@ -7,23 +7,58 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+
+// Enhanced CORS configuration
 app.use(cors({
   origin: [
     'http://localhost:3000', 
     'https://advanced-tsp.onrender.com',
     'https://advacned-tsp.onrender.com',
     'https://advanced-stp-dashboard.vercel.app'
-  ]
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Add explicit OPTIONS handling for preflight requests
+app.options('*', cors());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error(err));
 
-// Test home route
+// Test home route with debugging
 app.get('/', (req, res) => {
-  res.send('<h1>API is running</h1><p>Try <a href="/api/services">/api/services</a></p>');
+  console.log('Home route accessed');
+  res.json({
+    message: 'API is running',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    links: {
+      services: '/api/services',
+      specific_service: '/api/services/cloud-computing-migration/cloud-migration'
+    }
+  });
+});
+
+// Add debugging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
+// Add a specific test route for debugging
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Test route working',
+    environment: process.env.NODE_ENV,
+    mongoUri: process.env.MONGO_URI ? 'Connected' : 'Not set',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // API routes
