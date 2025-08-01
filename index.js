@@ -14,12 +14,15 @@ app.use(cors({
     'http://localhost:3000', 
     'https://advanced-tsp.onrender.com',
     'https://advacned-tsp.onrender.com',
-    'https://advanced-stp-dashboard.vercel.app'
+    'https://advanced-stp-dashboard.vercel.app',
+    'https://advanced-tsp-company.vercel.app',  
+    'https://*.vercel.app'  
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  optionsSuccessStatus: 200
 }));
 
 // Add explicit OPTIONS handling for preflight requests
