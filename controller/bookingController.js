@@ -68,11 +68,11 @@ exports.getBookingById = async (req, res) => {
   }
 };
 
-// Create a booking with Resend email notifications
+// Create a consultation booking with Resend email notifications
 exports.createBooking = async (req, res) => {
   try {
-    // Basic validation
-    const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'serviceId', 'task', 'date'];
+    // Updated validation for consultation form
+    const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'preferredDate', 'message'];
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
@@ -91,20 +91,74 @@ exports.createBooking = async (req, res) => {
       });
     }
     
-    // Create booking
-    const booking = new Booking({
-      ...req.body,
-      status: 'pending' // Default status
-    });
+    // Validate services interested (if provided)
+    if (req.body.servicesInterested && Array.isArray(req.body.servicesInterested)) {
+      const validServices = [
+        'Managed IT Services',
+        'Cybersecurity & Risk Management', 
+        'Custom Web & Software Development',
+        'Cloud Computing & Migration',
+        'IT Consulting & Strategy',
+        'Learning & Training'
+      ];
+      
+      const invalidServices = req.body.servicesInterested.filter(
+        service => !validServices.includes(service)
+      );
+      
+      if (invalidServices.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid services: ${invalidServices.join(', ')}`
+        });
+      }
+    }
     
+    // Prepare booking data
+    const bookingData = {
+      // Customer Information
+      customerName: req.body.customerName,
+      customerEmail: req.body.customerEmail,
+      customerPhone: req.body.customerPhone,
+      
+      // Company Information
+      companyName: req.body.companyName,
+      companySize: req.body.companySize || 'Not specified',
+      industry: req.body.industry,
+      
+      // Services
+      servicesInterested: req.body.servicesInterested || [],
+      
+      // Consultation Details
+      preferredDate: new Date(req.body.preferredDate),
+      preferredTime: req.body.preferredTime,
+      hasITProvider: req.body.hasITProvider || 'Unsure',
+      message: req.body.message,
+      
+      // Legacy fields for backward compatibility
+      serviceId: req.body.serviceId,
+      subServiceSlug: req.body.subServiceSlug,
+      task: req.body.task || req.body.message, // Use message as task for legacy support
+      date: req.body.date || new Date(req.body.preferredDate), // Use preferredDate as date for legacy
+      
+      // Status and management
+      status: 'pending',
+      consultationType: req.body.consultationType || 'initial',
+      priority: req.body.priority || 'medium'
+    };
+    
+    // Create booking
+    const booking = new Booking(bookingData);
     await booking.save();
     
-    // Populate service data for response and email
-    await booking.populate('serviceId', 'name');
+    // Populate service data for response and email (if serviceId exists)
+    if (booking.serviceId) {
+      await booking.populate('serviceId', 'name');
+    }
     
     // Send email notifications using Resend (don't block the response if emails fail)
     try {
-      console.log('📧 Sending booking confirmation emails via Resend...');
+      console.log('📧 Sending consultation confirmation emails via Resend...');
       
       // Send confirmation email to customer
       const customerEmailResult = await sendBookingConfirmation(booking);
@@ -128,15 +182,26 @@ exports.createBooking = async (req, res) => {
     
     res.status(201).json({
       success: true,
-      message: 'Booking created successfully',
+      message: 'Consultation booking created successfully',
       data: booking
     });
     
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('Error creating consultation booking:', error);
+    
+    // Handle validation errors specifically
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error creating booking',
+      message: 'Error creating consultation booking',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
