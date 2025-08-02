@@ -26,7 +26,6 @@ const BookingSchema = new mongoose.Schema({
   },
   companySize: {
     type: String,
-    enum: ['1-10', '11-50', '51-200', '201-500', '500+', 'Not specified'],
     default: 'Not specified'
   },
   industry: {
@@ -61,14 +60,12 @@ const BookingSchema = new mongoose.Schema({
     required: true
   },
   preferredTime: {
-    type: String,
-    enum: ['Morning (9AM-12PM)', 'Afternoon (12PM-5PM)', 'Evening (5PM-8PM)', 'Flexible']
+    type: String
   },
   
   // Current IT Provider Status
   hasITProvider: {
     type: String,
-    enum: ['Yes', 'No', 'Unsure'],
     default: 'Unsure'
   },
   
