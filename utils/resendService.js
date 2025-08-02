@@ -8,9 +8,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 const sendBookingConfirmation = async (bookingData) => {
   try {
-    console.log('📧 [Resend] Attempting to send booking confirmation email...');
-    console.log('Resend API Key configured:', !!process.env.RESEND_API_KEY);
-    console.log('From email:', process.env.RESEND_FROM_EMAIL);
     
     const { 
       customerName, 
@@ -132,14 +129,11 @@ const sendBookingConfirmation = async (bookingData) => {
       `
     };
     
-    console.log('📧 [Resend] Sending email to:', customerEmail);
     const result = await resend.emails.send(emailData);
-    console.log('✅ [Resend] Booking confirmation email sent successfully!');
-    console.log('Email ID:', result.data?.id);
     
     return { success: true, emailId: result.data?.id };
   } catch (error) {
-    console.error('❌ [Resend] Error sending booking confirmation email:', error);
+    console.error('Error sending booking confirmation email:', error);
     return { success: false, error: error.message };
   }
 };
@@ -149,8 +143,6 @@ const sendBookingConfirmation = async (bookingData) => {
  */
 const sendBookingNotificationToAdmin = async (bookingData) => {
   try {
-    console.log('📧 [Resend] Attempting to send admin notification email...');
-    
     const { 
       customerName, 
       customerEmail, 
@@ -172,7 +164,6 @@ const sendBookingNotificationToAdmin = async (bookingData) => {
     
     // Use admin email or fallback to from email
     const adminEmail = process.env.ADMIN_EMAIL || process.env.RESEND_FROM_EMAIL;
-    console.log('Admin email:', adminEmail);
     
     // Safely get service name or services list
     const serviceName = serviceId && serviceId.name ? serviceId.name : (subServiceSlug || 'Consultation');
@@ -286,14 +277,11 @@ const sendBookingNotificationToAdmin = async (bookingData) => {
       `
     };
     
-    console.log('📧 [Resend] Sending admin notification to:', adminEmail);
     const result = await resend.emails.send(emailData);
-    console.log('✅ [Resend] Admin notification email sent successfully!');
-    console.log('Email ID:', result.data?.id);
     
     return { success: true, emailId: result.data?.id };
   } catch (error) {
-    console.error('❌ [Resend] Error sending admin notification email:', error);
+    console.error('Error sending admin notification email:', error);
     return { success: false, error: error.message };
   }
 };

@@ -158,25 +158,13 @@ exports.createBooking = async (req, res) => {
     
     // Send email notifications using Resend (don't block the response if emails fail)
     try {
-      console.log('📧 Sending consultation confirmation emails via Resend...');
-      
       // Send confirmation email to customer
-      const customerEmailResult = await sendBookingConfirmation(booking);
-      if (customerEmailResult.success) {
-        console.log('✅ Customer confirmation email sent successfully via Resend');
-      } else {
-        console.error('❌ Failed to send customer confirmation email:', customerEmailResult.error);
-      }
+      await sendBookingConfirmation(booking);
       
       // Send notification email to admin
-      const adminEmailResult = await sendBookingNotificationToAdmin(booking);
-      if (adminEmailResult.success) {
-        console.log('✅ Admin notification email sent successfully via Resend');
-      } else {
-        console.error('❌ Failed to send admin notification email:', adminEmailResult.error);
-      }
+      await sendBookingNotificationToAdmin(booking);
     } catch (emailError) {
-      console.error('❌ Email notification error:', emailError);
+      console.error('Email notification error:', emailError);
       // Don't fail the booking creation if email fails
     }
     
