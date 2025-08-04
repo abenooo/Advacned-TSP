@@ -10,6 +10,13 @@ const sendBookingConfirmation = async (bookingData) => {
     const servicesText = servicesInterested?.join(', ') || 'Consultation';
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
+    if (!customerEmail) {
+      console.error('No customer email provided');
+      return { success: false, error: 'No customer email provided' };
+    }
+
+    console.log(`Sending confirmation email to: ${customerEmail}`);
+    
     const emailData = {
       from: fromEmail,
       to: customerEmail,
@@ -36,9 +43,14 @@ const sendBookingConfirmation = async (bookingData) => {
     };
 
     const result = await resend.emails.send(emailData);
+    console.log('Confirmation email sent successfully:', result);
     return { success: true, emailId: result.data?.id };
   } catch (error) {
-    console.error('Error sending confirmation email:', error);
+    console.error('Error sending confirmation email:', {
+      error: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
     return { success: false, error: error.message };
   }
 };
@@ -50,8 +62,14 @@ const sendBookingNotificationToAdmin = async (bookingData) => {
   try {
     const { customerName, customerEmail, customerPhone, companyName, servicesInterested, preferredDate, _id } = bookingData;
     const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail) throw new Error('ADMIN_EMAIL not set');
+    
+    if (!adminEmail) {
+      console.error('ADMIN_EMAIL not set in environment variables');
+      return { success: false, error: 'ADMIN_EMAIL not configured' };
+    }
 
+    console.log(`Sending admin notification to: ${adminEmail}`);
+    
     const emailData = {
       from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
       to: adminEmail,
@@ -79,9 +97,14 @@ const sendBookingNotificationToAdmin = async (bookingData) => {
     };
 
     const result = await resend.emails.send(emailData);
+    console.log('Admin notification email sent successfully:', result);
     return { success: true, emailId: result.data?.id };
   } catch (error) {
-    console.error('Error sending admin notification:', error);
+    console.error('Error sending admin notification email:', {
+      error: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
     return { success: false, error: error.message };
   }
 };
