@@ -73,6 +73,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const careerJobRoutes = require('./routes/careerJobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const blogPostRoutes = require('./routes/blogPostRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 // Apply routes
 app.use('/api/auth', authRoutes);
@@ -81,6 +82,7 @@ app.use('/api/bookings', bookingRoutes); // Public POST routes
 app.use('/api/career-jobs', careerJobRoutes); // Public GET routes
 app.use('/api/applications', applicationRoutes); // Public POST routes
 app.use('/api/blog-posts', blogPostRoutes);
+app.use('/api/contacts', contactRoutes); // Public POST, admin-protected GET
 
 // Protected routes (require authentication)
 const adminUserRoutes = require('./routes/adminUserRoutes');
