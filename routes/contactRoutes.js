@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { isAdmin } = require('../middleware/roleAuth');
+// Local admin check to avoid external dependency
+const requireAdmin = (req, res, next) => {
+  if (req?.user?.role === 'admin' || req?.user?.role === 'super_admin') return next();
+  return res.status(403).json({ success: false, message: 'Admin access required' });
+};
 
 const {
   createContact,
@@ -15,7 +19,7 @@ const {
 router.post('/', createContact);
 
 // Protected routes: only admins can view/manage contacts
-router.use(auth, isAdmin);
+router.use(auth, requireAdmin);
 
 router.get('/', getAllContacts);
 router.get('/:id', getContactById);
