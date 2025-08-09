@@ -26,8 +26,8 @@ router.get('/:slug', getServiceById);
 router.post('/', auth, createService);
 router.put('/:id', auth, updateService);
 router.delete('/:id', auth, deleteService);
-router.post('/:id/subservice', auth, addSubService);
-router.put('/:id/subservice/:subSlug', auth, updateSubService);
-router.delete('/:id/subservice/:subSlug', auth, deleteSubService);
+router.post('/:id/sub-services', auth, addSubService);
+router.put('/:id/sub-services/:subSlug', auth, updateSubService);
+router.delete('/:id/sub-services/:subSlug', auth, deleteSubService);
 
 module.exports = router;
