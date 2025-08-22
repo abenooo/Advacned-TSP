@@ -17,7 +17,9 @@ app.use(cors({
     'https://advanced-stp-dashboard.vercel.app',
     'https://advanced-tsp-company.vercel.app',  
     'https://*.vercel.app',  
-    'https://www.atsolutionsus.com'
+    'https://www.atsolutionsus.com',
+    '*',
+
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
